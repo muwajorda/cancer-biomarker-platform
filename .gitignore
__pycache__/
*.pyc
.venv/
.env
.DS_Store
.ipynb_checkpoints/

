@@ -1,0 +1,184 @@
+# Cancer Biomarker Platform
+
+AI-Powered Biomedical Evidence & Decision Platform
+
+A cloud-native platform that integrates heterogeneous biomedical data — genomics, transcriptomics, single-cell, proteomics, clinical/diagnostic data, drug-response datasets, and EHR-derived data — and uses ML and GenAI to transform raw data into prioritized, explainable evidence for research and clinical-development decisions.
+
+## Project positioning
+
+The centerpiece is not a dashboard. The centerpiece is the decision engine.
+
+Question → Evidence → Analysis → ML ranking → GenAI synthesis → Decision
+
+Example scientific question:
+"Which biomarkers have the strongest evidence for distinguishing responders from non-responders in this disease?"
+
+The platform can:
+- find relevant datasets in an AWS data lake,
+- standardize and harmonize the data,
+- run the appropriate statistical and ML analyses,
+- retrieve relevant experimental and clinical evidence,
+- score candidate biomarkers,
+- identify conflicting evidence,
+- synthesize findings with GenAI,
+- produce an explainable recommendation,
+- let the scientist drill down to the underlying evidence.
+
+## Product vision
+
+This platform is generalizable across multiple biomedical domains:
+
+| Company focus | Data plugged in | Decision supported |
+| --- | --- | --- |
+| CRISPR / functional genomics | CRISPR screens, perturb-seq | Which targets/pathways matter? |
+| Single-cell | scRNA-seq, spatial | Which cell populations/markers matter? |
+| Diagnostics | tumor/clinical/biomarker data | Which biomarkers/panels should advance? |
+| Drug development | response + molecular profiles | Who responds and why? |
+| Liquid biopsy | cfDNA, RNA, protein | Which signatures are detectable? |
+| Proteomics | mass spec, CPTAC-style data | Which proteins support the hypothesis? |
+| Clinical | EHR/phenotypes | How does molecular evidence connect to patients? |
+
+The architecture stays consistent across use cases.
+
+## Architecture
+
+```text
+BIOMEDICAL DATA SOURCES
+  ├─ Genomics
+  ├─ Single-cell
+  ├─ Proteomics
+  ├─ CRISPR / perturbation
+  ├─ Clinical / diagnostics
+  └─ Drug response
+            ↓
+      AWS DATA LAKE
+      ├─ Raw / Bronze
+      └─ Curated / Silver
+            ↓
+      EVIDENCE LAYER
+      ├─ Statistical analysis
+      ├─ ML ranking
+      └─ Knowledge + literature retrieval
+            ↓
+      BIOMARKER ENGINE
+      ├─ Ranking
+      ├─ Evidence synthesis
+      └─ Confidence scoring
+            ↓
+      GENAI DECISION LAYER
+      ├─ Explainable recommendations
+      ├─ Caveats / uncertainty
+      └─ Next experiment suggestions
+            ↓
+      Scientist UI / Leadership Dashboard
+```
+
+AWS is the infrastructure layer. The product is the decision engine.
+
+## Example GenAI output
+
+Candidate A — Score 91/100
+- Tumor specificity: 94
+- Detectability: 88
+- Differential expression: 96
+- External validation: 91
+- Off-target expression: 87
+- Evidence strength: High
+- Confidence: 0.89
+
+Why it ranked highly:
+- strong expression differential in tumor vs normal tissue,
+- low off-target expression in healthy tissue,
+- support from external validation sources,
+- likely surface accessibility for therapeutic targeting.
+
+Supporting evidence:
+- TCGA
+- GTEx
+- CPTAC
+- single-cell atlas
+- published studies
+- internal dataset
+
+Caveats:
+- limited validation in early-stage disease,
+- signal reduced in one tissue subtype,
+- protein-level evidence incomplete.
+
+Recommended next experiment:
+- prospective assay in an early-stage cohort,
+- orthogonal validation with protein-level measurements,
+- paired response analysis in treated populations.
+
+## Repository structure
+
+```text
+.
+├── app/
+│   ├── __init__.py
+│   └── main.py
+├── data/
+│   └── sample_biomarkers.csv
+├── src/
+│   ├── __init__.py
+│   └── biomarker_engine.py
+├── .gitignore
+├── README.md
+├── requirements.txt
+└── index.html
+```
+
+## MVP build status
+
+This repository now includes:
+- a minimal Python-based biomarker scoring engine,
+- sample biomarker data for PDAC and BRCA scenarios,
+- a FastAPI backend exposing candidate endpoints,
+- starter documentation and a product narrative for the portfolio project.
+
+## Local setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Then open:
+- http://127.0.0.1:8000/docs
+- http://127.0.0.1:8000/api/v1/health
+- http://127.0.0.1:8000/api/v1/candidates?cancer_type=PDAC&limit=5
+
+## Sample scoring logic
+
+The ranking engine computes a weighted composite score from:
+- tumor specificity,
+- off-target risk,
+- surface accessibility,
+- response signal,
+- evidence strength.
+
+This gives a transparent scoring model that can be extended to real multi-omics evidence and ML models.
+
+## Next roadmap
+
+1. Replace synthetic sample data with real public data sources.
+2. Add retrieval and knowledge-graph integration for evidence search.
+3. Connect the API to the project dashboard and UI.
+4. Add model explainability and confidence calibration.
+5. Deploy a cloud-native data pipeline on AWS.
+
+## Why this project matters
+
+This is more compelling than a general-purpose biomedical chatbot. The project answers a concrete scientific decision problem: which biomarkers are strongest, why, and what should be tested next.
+
+That transforms the repository from static UI prototype to a credible biomedical decision-support platform.
+
+## Repository intent
+
+This project is positioned as an AI-powered cancer biomarker intelligence platform for translational oncology, precision medicine, and clinical development decision support.
+
+---
+
+This is the foundation for a stronger portfolio story: build a visible evidence-backed biomarker recommendation engine, not just a dashboard.
