@@ -1,963 +1,251 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950 text-slate-100">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OncoMark — Cancer Biomarker Intelligence Platform</title>
-    <!-- Tailwind CSS -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cancer Biomarker Platform</title>
+    <meta
+      name="description"
+      content="AI-powered biomedical evidence and decision support platform for biomarker prioritization and translational oncology."
+    />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            900: '#0c4a6e',
-                        },
-                        biomed: {
-                            teal: '#14b8a6',
-                            purple: '#a855f7',
-                            amber: '#f59e0b',
-                            rose: '#f43f5e',
-                            emerald: '#10b981'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        code, pre { font-family: 'JetBrains Mono', monospace; }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+      body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      .hero-grid {
+        background-image:
+          linear-gradient(rgba(14, 116, 144, 0.08), rgba(14, 116, 144, 0.08)),
+          radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 35%),
+          radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.16), transparent 30%);
+      }
     </style>
-</head>
-<body class="h-full flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
-
-    <!-- Navigation Header -->
-    <header class="bg-slate-900 border-b border-slate-800 px-6 py-3.5 flex items-center justify-between shrink-0">
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased">
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm sticky top-0 z-50">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <i data-lucide="dna" class="w-5 h-5 text-white"></i>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="font-bold text-lg text-white tracking-tight">OncoMark</h1>
-                    <span class="px-2 py-0.5 text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">v2.4 Platform</span>
-                </div>
-                <p class="text-xs text-slate-400">Cancer Biomarker Intelligence & Prioritization Engine</p>
-            </div>
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 font-bold text-white">
+            CB
+          </div>
+          <div>
+            <div class="text-lg font-semibold tracking-tight">Cancer Biomarker Platform</div>
+            <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">AI-powered evidence engine</div>
+          </div>
         </div>
-
-        <!-- Navigation Tabs -->
-        <nav class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-            <button onclick="switchTab('candidates')" id="tab-candidates" class="nav-tab active flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all bg-brand-600 text-white shadow-sm">
-                <i data-lucide="table" class="w-4 h-4"></i> Candidates
-            </button>
-            <button onclick="switchTab('pairs')" id="tab-pairs" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
-                <i data-lucide="git-merge" class="w-4 h-4"></i> Biomarker Pairs
-            </button>
-            <button onclick="switchTab('qc')" id="tab-qc" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
-                <i data-lucide="shield-check" class="w-4 h-4"></i> Assay QC
-            </button>
-            <button onclick="switchTab('ai')" id="tab-ai" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
-                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> AI Assistant
-            </button>
-            <button onclick="switchTab('api-explorer')" id="tab-api-explorer" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
-                <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> API Client
-            </button>
-            <button onclick="switchTab('code')" id="tab-code" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
-                <i data-lucide="code-2" class="w-4 h-4"></i> FastAPI Code
-            </button>
+        <nav class="hidden items-center gap-8 text-sm text-slate-300 md:flex">
+          <a href="#platform" class="hover:text-white">Platform</a>
+          <a href="#use-cases" class="hover:text-white">Use Cases</a>
+          <a href="#architecture" class="hover:text-white">Architecture</a>
+          <a href="#mvp" class="hover:text-white">MVP</a>
         </nav>
-
-        <!-- Status & Actions -->
-        <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="font-mono text-[11px] text-slate-400">DuckDB connected</span>
-            </div>
-        </div>
+        <a href="https://github.com/muwajorda/cancer-biomarker-platform" class="rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-300 hover:bg-cyan-500/20">View GitHub</a>
+      </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-hidden relative">
+    <main>
+      <section class="hero-grid">
+        <div class="mx-auto grid max-w-7xl gap-12 px-6 py-20 md:grid-cols-2 md:items-center">
+          <div>
+            <div class="mb-4 inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-300">
+              AI-Powered Biomedical Evidence & Decision Platform
+            </div>
+            <h1 class="max-w-xl text-4xl font-bold tracking-tight text-white md:text-6xl">
+              Prioritize biomarker candidates with evidence, not guesswork.
+            </h1>
+            <p class="mt-6 max-w-xl text-lg text-slate-300">
+              A cloud-native platform that integrates genomics, single-cell, proteomics, clinical, and drug-response data to produce explainable, ranked evidence for biomedical decision-making.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-4">
+              <a href="#mvp" class="rounded-xl bg-cyan-500 px-6 py-3 font-medium text-slate-950 shadow-lg shadow-cyan-500/20 hover:bg-cyan-400">Explore MVP</a>
+              <a href="#architecture" class="rounded-xl border border-slate-700 bg-slate-900 px-6 py-3 font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-800">See architecture</a>
+            </div>
+            <div class="mt-10 flex flex-wrap gap-8 text-sm text-slate-400">
+              <div>
+                <div class="text-2xl font-bold text-white">Question →</div>
+                <div>Scientific query</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold text-white">Evidence →</div>
+                <div>Multi-omic context</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold text-white">Decision →</div>
+                <div>Actionable recommendation</div>
+              </div>
+            </div>
+          </div>
 
-        <!-- TAB 1: BIOMARKER CANDIDATES EXPLORER -->
-        <div id="view-candidates" class="tab-content h-full p-6 flex flex-col gap-6 overflow-y-auto">
-            <!-- Controls Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-xl border border-slate-800 backdrop-blur-sm">
-                <div class="flex flex-wrap items-center gap-4">
-                    <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Cancer Indication</label>
-                        <select id="candidate-cancer-filter" onchange="filterCandidates()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
-                            <option value="PDAC">PDAC (Pancreatic Ducto-Adenocarcinoma)</option>
-                            <option value="BRCA">BRCA (Breast Invasive Carcinoma)</option>
-                            <option value="LUAD">LUAD (Lung Adenocarcinoma)</option>
-                            <option value="COAD">COAD (Colon Adenocarcinoma)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Min Tumor/Normal Ratio</label>
-                        <input type="number" id="candidate-ratio-filter" value="5.0" step="1" oninput="filterCandidates()" class="w-24 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Surface Accessible Only</label>
-                        <label class="flex items-center gap-2 mt-2 cursor-pointer">
-                            <input type="checkbox" id="candidate-surface-filter" onchange="filterCandidates()" class="rounded bg-slate-950 border-slate-700 text-brand-500 focus:ring-brand-500">
-                            <span class="text-xs text-slate-300">Surface / Membrane</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="candidate-search" placeholder="Search gene symbol..." onkeyup="filterCandidates()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 w-48 focus:outline-none focus:border-brand-500">
-                </div>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/75 p-6 shadow-2xl shadow-cyan-950/30">
+            <div class="mb-6 flex items-center justify-between">
+              <div>
+                <div class="text-sm uppercase tracking-[0.25em] text-slate-400">Example query</div>
+                <div class="mt-2 text-xl font-semibold text-white">Which biomarkers distinguish responders?</div>
+              </div>
+              <div class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">Live scoring</div>
             </div>
 
-            <!-- Main Data Table and Detail Panel Split -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[450px]">
-                <!-- Table Column -->
-                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-                    <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                        <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                            <i data-lucide="list" class="w-4 h-4 text-brand-400"></i> Prioritized Biomarker Candidates
-                        </h2>
-                        <span id="candidate-count" class="text-xs text-slate-400">Showing 6 candidates</span>
-                    </div>
-                    <div class="flex-1 overflow-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-950/80 text-slate-400 sticky top-0 uppercase tracking-wider text-[10px]">
-                                <tr>
-                                    <th class="p-3">Rank</th>
-                                    <th class="p-3">Gene</th>
-                                    <th class="p-3 text-right">Tumor TPM</th>
-                                    <th class="p-3 text-right">Normal TPM</th>
-                                    <th class="p-3 text-right">T/N Ratio</th>
-                                    <th class="p-3 text-center">Surface</th>
-                                    <th class="p-3 text-right">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody id="candidates-tbody" class="divide-y divide-slate-800/60 font-mono">
-                                <!-- Dynamic rows -->
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="space-y-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <div class="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <span>Candidate</span>
+                  <span>Priority</span>
                 </div>
-
-                <!-- Evidence Inspector Card -->
-                <div id="evidence-card" class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-4 overflow-y-auto">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <div>
-                            <span id="inspect-gene" class="text-xl font-bold font-mono text-cyan-400">CEACAM6</span>
-                            <span id="inspect-id" class="text-xs text-slate-400 block font-mono">ENSG00000086548</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] uppercase text-slate-400 block font-sans font-semibold">Priority Score</span>
-                            <span id="inspect-score" class="text-lg font-bold font-mono text-emerald-400">0.93</span>
-                        </div>
-                    </div>
-
-                    <!-- Radar / Breakdown Breakdown -->
-                    <div>
-                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 font-sans">Evidence Vector Scores</h4>
-                        <div class="space-y-2">
-                            <div>
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Tumor Specificity</span>
-                                    <span id="score-spec-val" class="font-mono text-slate-200">0.96</span>
-                                </div>
-                                <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                                    <div id="score-spec-bar" class="bg-brand-500 h-full rounded-full" style="width: 96%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Off-Target Safety (GTEx)</span>
-                                    <span id="score-off-val" class="font-mono text-slate-200">0.91</span>
-                                </div>
-                                <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                                    <div id="score-off-bar" class="bg-biomed-emerald h-full rounded-full" style="width: 91%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Surface Accessibility</span>
-                                    <span id="score-surf-val" class="font-mono text-slate-200">1.00</span>
-                                </div>
-                                <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                                    <div id="score-surf-bar" class="bg-biomed-purple h-full rounded-full" style="width: 100%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-[11px] mb-1">
-                                    <span class="text-slate-400">Cell-Line Essentiality (DepMap)</span>
-                                    <span id="score-dep-val" class="font-mono text-slate-200">0.82</span>
-                                </div>
-                                <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-                                    <div id="score-dep-bar" class="bg-biomed-amber h-full rounded-full" style="width: 82%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- GTEx Normal Expression Bar Chart -->
-                    <div class="mt-2 flex-1">
-                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 font-sans">GTEx Off-Target Distribution (TPM)</h4>
-                        <div class="h-44 w-full bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                            <canvas id="gtexChart"></canvas>
-                        </div>
-                    </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-xl font-bold text-cyan-300">CEACAM6</div>
+                    <div class="text-xs text-slate-400">PDAC • surface-accessible</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xl font-bold text-emerald-300">0.93</div>
+                    <div class="text-xs text-slate-400">score</div>
+                  </div>
                 </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                  <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Tumor specificity</div>
+                  <div class="mt-2 text-2xl font-bold text-white">0.96</div>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                  <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Off-target risk</div>
+                  <div class="mt-2 text-2xl font-bold text-white">0.09</div>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                  <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Response signal</div>
+                  <div class="mt-2 text-2xl font-bold text-white">0.87</div>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                  <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Evidence strength</div>
+                  <div class="mt-2 text-2xl font-bold text-white">0.91</div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+                <div class="text-xs uppercase tracking-[0.2em] text-amber-300">AI synthesis</div>
+                <div class="mt-2 text-sm text-slate-200">
+                  “Strong tumor-specific signal, low normal-tissue expression, and meaningful response support make this a high-confidence candidate for downstream validation.”
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="platform" class="mx-auto max-w-7xl px-6 py-20">
+        <div class="mb-12 text-center">
+          <div class="text-sm uppercase tracking-[0.25em] text-cyan-300">The platform</div>
+          <h2 class="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">The centerpiece is the decision engine</h2>
         </div>
 
-        <!-- TAB 2: BIOMARKER PAIRS -->
-        <div id="view-pairs" class="tab-content hidden h-full p-6 flex flex-col gap-6 overflow-y-auto">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                        <i data-lucide="git-merge" class="w-4 h-4 text-biomed-purple"></i> Combinatorial Biomarker Pair Prioritization
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Identify complementary pairs for dual-antibody or logic-gated diagnostic assays based on single-cell co-expression.</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <select id="pair-cancer-filter" onchange="renderPairsTable()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
-                        <option value="PDAC">Pancreatic Cancer (PDAC)</option>
-                        <option value="BRCA">Breast Cancer (BRCA)</option>
-                    </select>
-                </div>
+        <div class="grid gap-6 md:grid-cols-3">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <div class="mb-4 text-cyan-300">01</div>
+            <h3 class="text-xl font-semibold text-white">Evidence aggregation</h3>
+            <p class="mt-3 text-slate-300">Combine genomics, single-cell, clinical, and literature signals into one explainable evidence layer.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <div class="mb-4 text-cyan-300">02</div>
+            <h3 class="text-xl font-semibold text-white">ML ranking</h3>
+            <p class="mt-3 text-slate-300">Score biomarker candidates using specificity, detectability, off-target risk, and response strength.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <div class="mb-4 text-cyan-300">03</div>
+            <h3 class="text-xl font-semibold text-white">GenAI synthesis</h3>
+            <p class="mt-3 text-slate-300">Condense the evidence into a recommendation and explain the tradeoffs, caveats, and next-best experiment.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="use-cases" class="bg-slate-900/60 py-20">
+        <div class="mx-auto max-w-7xl px-6">
+          <div class="mb-12 text-center">
+            <div class="text-sm uppercase tracking-[0.25em] text-violet-300">Use cases</div>
+            <h2 class="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">One architecture, many biomedical decisions</h2>
+          </div>
+
+          <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+              <div class="text-sm font-semibold text-violet-300">CRISPR / functional</div>
+              <p class="mt-2 text-sm text-slate-300">Which genes and pathways matter most?</p>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-                <!-- Pairs Table -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-                    <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/50">
-                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Top Pair Candidates</h4>
-                    </div>
-                    <div class="flex-1 overflow-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-950/80 text-slate-400 sticky top-0 uppercase tracking-wider text-[10px]">
-                                <tr>
-                                    <th class="p-3">Rank</th>
-                                    <th class="p-3">Marker Pair</th>
-                                    <th class="p-3 text-right">Tumor Co-Exp</th>
-                                    <th class="p-3 text-right">Normal Co-Exp</th>
-                                    <th class="p-3 text-right">Pair Score</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pairs-tbody" class="divide-y divide-slate-800/60 font-mono">
-                                <!-- Dynamic rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pair Inspector & Single Cell Scatter Simulation -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-4">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <div>
-                            <span id="pair-title" class="text-lg font-bold font-mono text-biomed-purple">CEACAM6 + MSLN</span>
-                            <span class="text-xs text-slate-400 block font-sans">Single-Cell Co-expression Analysis</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] uppercase text-slate-400 block">Pair Specificity</span>
-                            <span id="pair-spec-val" class="text-base font-bold font-mono text-emerald-400">18.2x</span>
-                        </div>
-                    </div>
-
-                    <p class="text-xs text-slate-300">
-                        Single-cell co-expression demonstrates high specificity in malignant epithelial cells while showing negligible double-positivity in non-target normal tissues.
-                    </p>
-
-                    <!-- Co-expression Scatter Plot Canvas -->
-                    <div class="flex-1 min-h-[280px] bg-slate-950 p-3 rounded-lg border border-slate-800 relative">
-                        <canvas id="singleCellScatter"></canvas>
-                    </div>
-                </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+              <div class="text-sm font-semibold text-violet-300">Single-cell</div>
+              <p class="mt-2 text-sm text-slate-300">Which cell populations and markers matter?</p>
             </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+              <div class="text-sm font-semibold text-violet-300">Diagnostics</div>
+              <p class="mt-2 text-sm text-slate-300">Which biomarker panels should advance?</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+              <div class="text-sm font-semibold text-violet-300">Drug development</div>
+              <p class="mt-2 text-sm text-slate-300">Who responds and why?</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="architecture" class="mx-auto max-w-7xl px-6 py-20">
+        <div class="mb-12 text-center">
+          <div class="text-sm uppercase tracking-[0.25em] text-emerald-300">Architecture</div>
+          <h2 class="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">Built for evidence-backed decisioning</h2>
         </div>
 
-        <!-- TAB 3: ASSAY QC METRICS -->
-        <div id="view-qc" class="tab-content hidden h-full p-6 flex flex-col gap-6 overflow-y-auto">
-            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <div>
-                    <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Assay Quality Control & Batch Analysis
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Monitor high-throughput screening metrics, Z'-factors, control CVs, and batch effect PCA.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-1 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-md font-mono">Overall Assay Pass: Z' = 0.72</span>
-                </div>
+        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-6 md:p-8">
+          <div class="grid gap-4 md:grid-cols-5">
+            <div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Data</div>
+              <div class="mt-3 text-lg font-semibold text-white">Source layer</div>
+              <p class="mt-2 text-sm text-slate-300">Genomics, single-cell, proteomics, clinical datasets</p>
             </div>
-
-            <!-- QC Overview KPI Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Mean Z'-Factor</span>
-                    <span class="text-xl font-bold font-mono text-slate-100 mt-1 block">0.72</span>
-                    <span class="text-[10px] text-emerald-400 font-medium">Robust (&gt; 0.50 requirement)</span>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Signal/Background</span>
-                    <span class="text-xl font-bold font-mono text-slate-100 mt-1 block">14.8x</span>
-                    <span class="text-[10px] text-emerald-400 font-medium">High dynamic range</span>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Positive Control CV</span>
-                    <span class="text-xl font-bold font-mono text-slate-100 mt-1 block">4.2%</span>
-                    <span class="text-[10px] text-emerald-400 font-medium">Low variability</span>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Plates Passing QC</span>
-                    <span class="text-xl font-bold font-mono text-slate-100 mt-1 block">12 / 12</span>
-                    <span class="text-[10px] text-emerald-400 font-medium">100% completion rate</span>
-                </div>
+            <div class="flex items-center justify-center text-2xl text-slate-600">→</div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Lake</div>
+              <div class="mt-3 text-lg font-semibold text-white">AWS warehouse</div>
+              <p class="mt-2 text-sm text-slate-300">Bronze and silver curated layers</p>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-                <!-- Plate Signal Heatmap Simulation -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">384-Well Plate Signal Intensity Heatmap (Plate 04)</h4>
-                        <span class="text-[10px] font-mono text-slate-400">Controls: A1-B2 (Pos), A23-B24 (Neg)</span>
-                    </div>
-                    <!-- Plate Grid -->
-                    <div id="plate-grid" class="grid grid-cols-24 gap-1 p-3 bg-slate-950 rounded-lg border border-slate-800 flex-1 content-center">
-                        <!-- Dynamic 96/384 wells generated by JS -->
-                    </div>
-                </div>
-
-                <!-- PCA Batch Plot -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Batch Effect Analysis (PCA)</h4>
-                        <span class="text-[10px] font-mono text-slate-400">PC1: 42% var, PC2: 18% var</span>
-                    </div>
-                    <div class="flex-1 bg-slate-950 p-2 rounded-lg border border-slate-800 min-h-[250px]">
-                        <canvas id="pcaChart"></canvas>
-                    </div>
-                </div>
+            <div class="flex items-center justify-center text-2xl text-slate-600">→</div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Decision</div>
+              <div class="mt-3 text-lg font-semibold text-white">GenAI + ranking</div>
+              <p class="mt-2 text-sm text-slate-300">Explainable suggestions and next experiments</p>
             </div>
+          </div>
         </div>
+      </section>
 
-        <!-- TAB 4: AI SCIENTIFIC ASSISTANT (RAG ENGINE) -->
-        <div id="view-ai" class="tab-content hidden h-full p-6 flex flex-col gap-4 overflow-hidden">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                        <i data-lucide="sparkles" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-slate-100">OncoMark RAG Intelligence Assistant</h3>
-                        <p class="text-xs text-slate-400">Query biomarker candidate evidence, off-target risk profiles, and logic-gated pair strategies powered by Gemini API.</p>
-                    </div>
-                </div>
+      <section id="mvp" class="bg-slate-900/70 py-20">
+        <div class="mx-auto max-w-7xl px-6">
+          <div class="mb-12 text-center">
+            <div class="text-sm uppercase tracking-[0.25em] text-amber-300">MVP</div>
+            <h2 class="mt-4 text-3xl font-bold tracking-tight text-white md:text-4xl">A working biomarker scoring demo</h2>
+          </div>
+
+          <div class="grid gap-6 md:grid-cols-3">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <div class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">1</div>
+              <h3 class="text-xl font-semibold text-white">Sample scoring engine</h3>
+              <p class="mt-3 text-slate-300">Weighted ranking across specificity, off-target risk, accessiblity, and evidence strength.</p>
             </div>
-
-            <!-- Chat Container -->
-            <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-                <div id="ai-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-xs font-sans">
-                    <!-- Initial AI greeting -->
-                    <div class="flex items-start gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                            <i data-lucide="bot" class="w-4 h-4"></i>
-                        </div>
-                        <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl max-w-2xl text-slate-300 leading-relaxed space-y-2">
-                            <p class="font-semibold text-amber-400">Welcome to OncoMark Intelligence!</p>
-                            <p>I have access to harmonized evidence tables for candidates in <strong>PDAC, BRCA, LUAD,</strong> and <strong>COAD</strong> across TCGA expression, GTEx off-target tissue safety, HPA protein localization, and DepMap dependency.</p>
-                            <p class="text-slate-400">Try asking:</p>
-                            <ul class="list-disc pl-4 space-y-1 text-slate-400 font-mono text-[11px]">
-                                <li>"Why is CEACAM6 prioritized so highly for pancreatic cancer (PDAC)?"</li>
-                                <li>"Compare CLDN18 and MSLN as surface-accessible targets."</li>
-                                <li>"Explain the GTEx off-target safety risks for ERBB2."</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Input box -->
-                <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
-                    <input type="text" id="ai-input" placeholder="Ask a scientific question about candidates, pairs, or off-target safety..." onkeydown="if(event.key==='Enter') sendAiMessage()" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                    <button onclick="sendAiMessage()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/10">
-                        <span>Send</span>
-                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <div class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">2</div>
+              <h3 class="text-xl font-semibold text-white">FastAPI backend</h3>
+              <p class="mt-3 text-slate-300">Provide /api/v1/health and /api/v1/candidates endpoints for real ranked responses.</p>
             </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+              <div class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">3</div>
+              <h3 class="text-xl font-semibold text-white">Demo notebook</h3>
+              <p class="mt-3 text-slate-300">Explore top biomarker rankings and quickly validate the product story in a notebook.</p>
+            </div>
+          </div>
         </div>
-
-        <!-- TAB 5: API EXPLORER & CLIENT -->
-        <div id="view-api-explorer" class="tab-content hidden h-full p-6 flex flex-col gap-6 overflow-y-auto">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                    <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i> Interactive REST API Client
-                </h3>
-                <p class="text-xs text-slate-400 mt-0.5">Test backend FastAPI query endpoints directly against DuckDB analytical data marts.</p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-                <!-- Request Form -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-4">
-                    <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Endpoint Configuration</h4>
-
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Target Endpoint</label>
-                        <select id="api-endpoint-select" onchange="updateApiParams()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono">
-                            <option value="/api/v1/candidates">GET /api/v1/candidates</option>
-                            <option value="/api/v1/pairs">GET /api/v1/pairs</option>
-                            <option value="/api/v1/qc/metrics">GET /api/v1/qc/metrics</option>
-                            <option value="/api/v1/health">GET /api/v1/health</option>
-                        </select>
-                    </div>
-
-                    <!-- Dynamic Parameters Inputs -->
-                    <div id="api-params-container" class="space-y-3 border-t border-slate-800 pt-3">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">cancer_type</label>
-                            <input type="text" id="param-cancer" value="PDAC" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">min_score</label>
-                            <input type="number" id="param-score" value="0.75" step="0.05" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">limit</label>
-                            <input type="number" id="param-limit" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono">
-                        </div>
-                    </div>
-
-                    <button onclick="executeApiRequest()" class="mt-2 w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-                        <i data-lucide="play" class="w-4 h-4"></i> Execute Endpoint Request
-                    </button>
-                </div>
-
-                <!-- Response Viewer -->
-                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
-                    <div class="px-4 py-3 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
-                        <span class="text-xs font-semibold text-slate-300 font-mono" id="api-status-tag">STATUS: 200 OK</span>
-                        <span class="text-[11px] text-slate-400 font-mono" id="api-latency-tag">Latency: 14ms</span>
-                    </div>
-                    <div class="flex-1 p-4 bg-slate-950 overflow-auto">
-                        <pre class="text-xs font-mono"><code id="api-response-code" class="language-json">{
-  "status": "success",
-  "query_timestamp": "2026-09-26T18:00:00Z",
-  "results_count": 5
-}</code></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 6: FASTAPI CODE VIEWER -->
-        <div id="view-code" class="tab-content hidden h-full p-6 flex flex-col gap-4 overflow-hidden">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center shrink-0">
-                <div>
-                    <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                        <i data-lucide="code-2" class="w-4 h-4 text-cyan-400"></i> FastAPI Backend Application (`main.py`)
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Production-ready FastAPI service providing high-performance analytical queries over DuckDB gold marts.</p>
-                </div>
-                <button onclick="copyCode()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Source
-                </button>
-            </div>
-
-            <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-                <div class="p-4 bg-slate-950 flex-1 overflow-auto">
-                    <pre class="text-xs font-mono"><code id="fastapi-source-code" class="language-python">import duckdb
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Optional
-import os
-
-app = FastAPI(
-    title="OncoMark Cancer Biomarker Intelligence API",
-    description="REST API service for DuckDB multi-omics evidence marts and QC metrics.",
-    version="2.4.0"
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-DB_PATH = os.getenv("DUCKDB_PATH", "data/warehouse/oncomark.duckdb")
-
-def get_db():
-    """Context manager / helper for thread-safe DuckDB read connections."""
-    return duckdb.connect(DB_PATH, read_only=True)
-
-class BiomarkerCandidate(BaseModel):
-    cancer_type: str
-    gene_id: str
-    gene_symbol: str
-    tumor_median_tpm: float
-    normal_median_tpm: float
-    normal_max_tpm: float
-    tumor_normal_ratio: float
-    is_surface_accessible: bool
-    overall_biomarker_score: float
-    rank_in_cancer: int
-
-@app.get("/api/v1/candidates", response_model=List[BiomarkerCandidate])
-def get_candidates(
-    cancer_type: str = Query(..., description="Cancer indication (e.g. PDAC, BRCA)"),
-    min_score: float = Query(0.50, ge=0.0, le=1.0),
-    surface_only: bool = Query(False),
-    limit: int = Query(50, le=500)
-):
-    """Retrieve prioritized single biomarker candidates from DuckDB Gold Mart."""
-    conn = get_db()
-    query = """
-        SELECT 
-            cancer_type, gene_id, gene_symbol,
-            tumor_median_tpm, normal_median_tpm, normal_max_tpm,
-            tumor_normal_ratio, is_surface_accessible,
-            overall_biomarker_score, rank_in_cancer
-        FROM gold.biomarker_candidates
-        WHERE cancer_type = ? AND overall_biomarker_score >= ?
-    """
-    params = [cancer_type, min_score]
-    if surface_only:
-        query += " AND is_surface_accessible = TRUE"
-    query += " ORDER BY rank_in_cancer ASC LIMIT ?"
-    params.append(limit)
-    
-    results = conn.execute(query, params).fetchall()
-    cols = [col[0] for col in conn.description]
-    return [dict(zip(cols, row)) for row in results]
-
-@app.get("/api/v1/pairs")
-def get_pairs(
-    cancer_type: str = Query(...),
-    limit: int = Query(20)
-):
-    """Retrieve top logic-gated biomarker pairs evaluated on single-cell co-expression."""
-    conn = get_db()
-    query = """
-        SELECT 
-            cancer_type, gene_a, gene_b, gene_symbol_a, gene_symbol_b,
-            tumor_coexpression_rate, normal_coexpression_rate,
-            pair_specificity_ratio, overall_pair_score, rank_in_cancer
-        FROM gold.biomarker_pairs
-        WHERE cancer_type = ?
-        ORDER BY rank_in_cancer ASC LIMIT ?
-    """
-    results = conn.execute(query, [cancer_type, limit]).fetchall()
-    cols = [col[0] for col in conn.description]
-    return [dict(zip(cols, row)) for row in results]
-
-@app.get("/api/v1/qc/metrics")
-def get_qc_metrics():
-    """Retrieve high-throughput assay QC metrics, plate Z'-factors, and PCA variance."""
-    return {
-        "mean_z_prime": 0.72,
-        "signal_to_background": 14.8,
-        "positive_control_cv_pct": 4.2,
-        "plates_evaluated": 12,
-        "plates_passed": 12,
-        "pca_variance_explained": {"PC1": 0.42, "PC2": 0.18}
-    }
-
-@app.get("/api/v1/health")
-def health_check():
-    return {"status": "healthy", "database": "connected", "duckdb_path": DB_PATH}
-</code></pre>
-                </div>
-            </div>
-        </div>
+      </section>
     </main>
 
-    <!-- Application Logic Script -->
-    <script>
-        // Mock Warehouse Data for Desktop Preview
-        const MOCK_DATA = {
-            candidates: {
-                "PDAC": [
-                    { rank: 1, gene: "CEACAM6", id: "ENSG00000086548", tumor_tpm: 184.2, normal_tpm: 2.1, ratio: 87.7, surface: true, score: 0.93, gtex: [1.2, 0.4, 2.1, 0.8, 0.1, 1.8], spec: 0.96, off: 0.91, dep: 0.82 },
-                    { rank: 2, gene: "MSLN", id: "ENSG00000102804", tumor_tpm: 142.5, normal_tpm: 1.8, ratio: 79.1, surface: true, score: 0.90, gtex: [0.8, 0.2, 1.8, 0.5, 0.2, 1.1], spec: 0.92, off: 0.93, dep: 0.78 },
-                    { rank: 3, gene: "CLDN18", id: "ENSG00000183885", tumor_tpm: 98.4, normal_tpm: 4.2, ratio: 23.4, surface: true, score: 0.86, gtex: [4.2, 0.1, 0.3, 0.2, 0.1, 0.4], spec: 0.88, off: 0.82, dep: 0.89 },
-                    { rank: 4, gene: "S100A2", id: "ENSG00000196754", tumor_tpm: 112.0, normal_tpm: 8.5, ratio: 13.1, surface: false, score: 0.79, gtex: [8.5, 1.2, 3.4, 2.1, 0.5, 2.8], spec: 0.81, off: 0.74, dep: 0.65 },
-                    { rank: 5, gene: "MUC1", id: "ENSG00000185499", tumor_tpm: 210.6, normal_tpm: 19.4, ratio: 10.8, surface: true, score: 0.76, gtex: [19.4, 3.2, 8.1, 4.5, 1.2, 5.0], spec: 0.78, off: 0.61, dep: 0.84 },
-                    { rank: 6, gene: "GPC1", id: "ENSG00000063660", tumor_tpm: 64.1, normal_tpm: 7.2, ratio: 8.9, surface: true, score: 0.71, gtex: [7.2, 1.0, 2.5, 1.4, 0.3, 1.9], spec: 0.72, off: 0.76, dep: 0.58 }
-                ],
-                "BRCA": [
-                    { rank: 1, gene: "ERBB2", id: "ENSG00000141736", tumor_tpm: 245.0, normal_tpm: 5.4, ratio: 45.3, surface: true, score: 0.94, gtex: [5.4, 1.1, 3.2, 1.5, 0.4, 2.0], spec: 0.95, off: 0.88, dep: 0.92 },
-                    { rank: 2, gene: "VTCN1", id: "ENSG00000134258", tumor_tpm: 88.2, normal_tpm: 1.2, ratio: 73.5, surface: true, score: 0.89, gtex: [1.2, 0.3, 0.8, 0.4, 0.1, 0.9], spec: 0.91, off: 0.94, dep: 0.71 },
-                    { rank: 3, gene: "GATA3", id: "ENSG00000107485", tumor_tpm: 165.4, normal_tpm: 12.1, ratio: 13.6, surface: false, score: 0.81, gtex: [12.1, 2.0, 4.5, 3.1, 0.8, 4.0], spec: 0.82, off: 0.70, dep: 0.85 }
-                ]
-            },
-            pairs: {
-                "PDAC": [
-                    { rank: 1, pair: "CEACAM6 + MSLN", tumor_coexp: 0.74, normal_coexp: 0.02, spec_ratio: 37.0, score: 0.94 },
-                    { rank: 2, pair: "CEACAM6 + CLDN18", tumor_coexp: 0.68, normal_coexp: 0.03, spec_ratio: 22.6, score: 0.89 },
-                    { rank: 3, pair: "MSLN + MUC1", tumor_coexp: 0.62, normal_coexp: 0.05, spec_ratio: 12.4, score: 0.82 }
-                ],
-                "BRCA": [
-                    { rank: 1, pair: "ERBB2 + VTCN1", tumor_coexp: 0.81, normal_coexp: 0.01, spec_ratio: 81.0, score: 0.96 }
-                ]
-            }
-        };
-
-        let gtexChartInstance = null;
-        let scatterChartInstance = null;
-        let pcaChartInstance = null;
-
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            Prism.highlightAll();
-            renderCandidatesTable();
-            renderPairsTable();
-            initCharts();
-            generatePlateGrid();
-        });
-
-        // Tab Switcher Logic
-        function switchTab(tabId) {
-            document.querySelectorAll('.nav-tab').forEach(btn => {
-                btn.classList.remove('active', 'bg-brand-600', 'text-white', 'shadow-sm');
-                btn.classList.add('text-slate-400');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-
-            const activeBtn = document.getElementById(`tab-${tabId}`);
-            activeBtn.classList.add('active', 'bg-brand-600', 'text-white', 'shadow-sm');
-            activeBtn.classList.remove('text-slate-400');
-
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-
-            // Trigger re-render of charts if necessary
-            if (tabId === 'pairs' && scatterChartInstance) scatterChartInstance.update();
-            if (tabId === 'qc' && pcaChartInstance) pcaChartInstance.update();
-        }
-
-        // Filter and Render Candidates Table
-        function filterCandidates() {
-            renderCandidatesTable();
-        }
-
-        function renderCandidatesTable() {
-            const cancer = document.getElementById('candidate-cancer-filter').value;
-            const minRatio = parseFloat(document.getElementById('candidate-ratio-filter').value) || 0;
-            const surfaceOnly = document.getElementById('candidate-surface-filter').checked;
-            const search = document.getElementById('candidate-search').value.toLowerCase();
-
-            const candidates = MOCK_DATA.candidates[cancer] || [];
-            const filtered = candidates.filter(c => {
-                const matchRatio = c.ratio >= minRatio;
-                const matchSurface = surfaceOnly ? c.surface : true;
-                const matchSearch = c.gene.toLowerCase().includes(search);
-                return matchRatio && matchSurface && matchSearch;
-            });
-
-            const tbody = document.getElementById('candidates-tbody');
-            tbody.innerHTML = '';
-
-            filtered.forEach(c => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/50 cursor-pointer transition-colors';
-                tr.onclick = () => inspectCandidate(c);
-                tr.innerHTML = `
-                    <td class="p-3 text-slate-400 font-sans">#${c.rank}</td>
-                    <td class="p-3 font-semibold text-cyan-400">${c.gene}</td>
-                    <td class="p-3 text-right text-slate-200">${c.tumor_tpm.toFixed(1)}</td>
-                    <td class="p-3 text-right text-slate-400">${c.normal_tpm.toFixed(1)}</td>
-                    <td class="p-3 text-right text-emerald-400">${c.ratio.toFixed(1)}x</td>
-                    <td class="p-3 text-center">${c.surface ? '<span class="text-emerald-400">✓</span>' : '<span class="text-slate-600">-</span>'}</td>
-                    <td class="p-3 text-right font-bold text-slate-100">${c.score.toFixed(2)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('candidate-count').innerText = `Showing ${filtered.length} candidates`;
-            if (filtered.length > 0) inspectCandidate(filtered[0]);
-        }
-
-        function inspectCandidate(c) {
-            document.getElementById('inspect-gene').innerText = c.gene;
-            document.getElementById('inspect-id').innerText = c.id;
-            document.getElementById('inspect-score').innerText = c.score.toFixed(2);
-
-            document.getElementById('score-spec-val').innerText = c.spec.toFixed(2);
-            document.getElementById('score-spec-bar').style.width = `${c.spec * 100}%`;
-
-            document.getElementById('score-off-val').innerText = c.off.toFixed(2);
-            document.getElementById('score-off-bar').style.width = `${c.off * 100}%`;
-
-            document.getElementById('score-surf-val').innerText = c.surface ? "1.00" : "0.00";
-            document.getElementById('score-surf-bar').style.width = c.surface ? "100%" : "0%";
-
-            document.getElementById('score-dep-val').innerText = c.dep.toFixed(2);
-            document.getElementById('score-dep-bar').style.width = `${c.dep * 100}%`;
-
-            updateGtexChart(c.gtex);
-        }
-
-        function renderPairsTable() {
-            const cancer = document.getElementById('pair-cancer-filter').value;
-            const pairs = MOCK_DATA.pairs[cancer] || [];
-            const tbody = document.getElementById('pairs-tbody');
-            tbody.innerHTML = '';
-
-            pairs.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/50 cursor-pointer transition-colors';
-                tr.onclick = () => {
-                    document.getElementById('pair-title').innerText = p.pair;
-                    document.getElementById('pair-spec-val').innerText = `${p.spec_ratio.toFixed(1)}x`;
-                };
-                tr.innerHTML = `
-                    <td class="p-3 text-slate-400 font-sans">#${p.rank}</td>
-                    <td class="p-3 font-semibold text-biomed-purple">${p.pair}</td>
-                    <td class="p-3 text-right text-slate-200">${(p.tumor_coexp * 100).toFixed(0)}%</td>
-                    <td class="p-3 text-right text-slate-400">${(p.normal_coexp * 100).toFixed(0)}%</td>
-                    <td class="p-3 text-right font-bold text-emerald-400">${p.score.toFixed(2)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Initialize Chart.js visual components
-        function initCharts() {
-            // GTEx Bar Chart
-            const ctx1 = document.getElementById('gtexChart').getContext('2d');
-            gtexChartInstance = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: ['Liver', 'Heart', 'Brain', 'Kidney', 'Lung', 'Pancreas'],
-                    datasets: [{
-                        label: 'Normal TPM',
-                        data: [1.2, 0.4, 2.1, 0.8, 0.1, 1.8],
-                        backgroundColor: '#0284c7',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } }
-                    }
-                }
-            });
-
-            // Single Cell Scatter Simulation Chart
-            const ctx2 = document.getElementById('singleCellScatter').getContext('2d');
-            scatterChartInstance = new Chart(ctx2, {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Malignant Tumor Cells',
-                            data: Array.from({length: 40}, () => ({ x: Math.random() * 8 + 2, y: Math.random() * 8 + 2 })),
-                            backgroundColor: '#a855f7'
-                        },
-                        {
-                            label: 'Normal Tissues',
-                            data: Array.from({length: 30}, () => ({ x: Math.random() * 1.5, y: Math.random() * 1.5 })),
-                            backgroundColor: '#64748b'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
-                    scales: {
-                        x: { title: { display: true, text: 'Gene A Expression (log2 TPM)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                        y: { title: { display: true, text: 'Gene B Expression (log2 TPM)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
-                    }
-                }
-            });
-
-            // PCA Batch Scatter Chart
-            const ctx3 = document.getElementById('pcaChart').getContext('2d');
-            pcaChartInstance = new Chart(ctx3, {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        { label: 'Batch 1', data: [{x: -2, y: 1}, {x: -1.8, y: 0.8}, {x: -2.2, y: 1.2}], backgroundColor: '#38bdf8' },
-                        { label: 'Batch 2', data: [{x: 0, y: -1}, {x: 0.2, y: -0.8}, {x: -0.1, y: -1.1}], backgroundColor: '#10b981' },
-                        { label: 'Batch 3', data: [{x: 2, y: 0.5}, {x: 2.1, y: 0.3}, {x: 1.9, y: 0.7}], backgroundColor: '#f59e0b' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
-                    scales: {
-                        x: { title: { display: true, text: 'PC1 (42%)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                        y: { title: { display: true, text: 'PC2 (18%)', color: '#94a3b8' }, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
-                    }
-                }
-            });
-        }
-
-        function updateGtexChart(dataArr) {
-            if (!gtexChartInstance) return;
-            gtexChartInstance.data.datasets[0].data = dataArr;
-            gtexChartInstance.update();
-        }
-
-        function generatePlateGrid() {
-            const grid = document.getElementById('plate-grid');
-            grid.innerHTML = '';
-            for (let i = 0; i < 96; i++) {
-                const cell = document.createElement('div');
-                let color = 'bg-slate-800';
-                if (i < 4) color = 'bg-emerald-500'; // Pos controls
-                else if (i >= 92) color = 'bg-rose-500'; // Neg controls
-                else color = Math.random() > 0.85 ? 'bg-cyan-500' : 'bg-slate-800'; // Signal hits
-
-                cell.className = `w-full aspect-square rounded-sm ${color} opacity-80 hover:opacity-100 transition-opacity`;
-                grid.appendChild(cell);
-            }
-        }
-
-        // Gemini API RAG Assistant
-        async function sendAiMessage() {
-            const input = document.getElementById('ai-input');
-            const query = input.value.trim();
-            if (!query) return;
-
-            const chatBox = document.getElementById('ai-messages');
-
-            // Append User Message
-            const userDiv = document.createElement('div');
-            userDiv.className = 'flex items-start gap-3 justify-end';
-            userDiv.innerHTML = `
-                <div class="bg-brand-600 text-white p-3 rounded-xl max-w-xl text-xs font-sans">
-                    ${query}
-                </div>
-            `;
-            chatBox.appendChild(userDiv);
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // Append AI Typing indicator
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'flex items-start gap-3';
-            loadingDiv.innerHTML = `
-                <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                    <i data-lucide="bot" class="w-4 h-4"></i>
-                </div>
-                <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-400 italic">
-                    Querying OncoMark DuckDB evidence warehouse...
-                </div>
-            `;
-            chatBox.appendChild(loadingDiv);
-            lucide.createIcons();
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                // Call Gemini 3 Flash Preview
-                const apiKey = ""; // Canvas runtime auto-injects key
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-                const systemInstruction = `You are the OncoMark Scientific AI Assistant. Answer the user question using grounded biomedical knowledge about cancer biomarkers (TCGA expression, GTEx off-target safety, HPA protein localization, DepMap dependency). Keep answers concise, factual, and formatted with clean bullet points.`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: query }] }],
-                    systemInstruction: { parts: [{ text: systemInstruction }] }
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received from model.";
-
-                // Replace typing indicator with response
-                loadingDiv.innerHTML = `
-                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                        <i data-lucide="bot" class="w-4 h-4"></i>
-                    </div>
-                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl max-w-2xl text-slate-200 leading-relaxed space-y-2">
-                        ${aiText.replace(/\n/g, '<br>')}
-                    </div>
-                `;
-            } catch (err) {
-                loadingDiv.innerHTML = `
-                    <div class="bg-slate-950 border border-rose-500/30 p-3 rounded-xl text-rose-400">
-                        Error retrieving RAG insights: ${err.message}
-                    </div>
-                `;
-            }
-            chatBox.scrollTop = chatBox.scrollHeight;
-            lucide.createIcons();
-        }
-
-        // API Explorer Interaction
-        function updateApiParams() {
-            const endpoint = document.getElementById('api-endpoint-select').value;
-            const container = document.getElementById('api-params-container');
-            if (endpoint === '/api/v1/qc/metrics' || endpoint === '/api/v1/health') {
-                container.classList.add('hidden');
-            } else {
-                container.classList.remove('hidden');
-            }
-        }
-
-        function executeApiRequest() {
-            const endpoint = document.getElementById('api-endpoint-select').value;
-            const codeEl = document.getElementById('api-response-code');
-            let responseObj = {};
-
-            if (endpoint === '/api/v1/candidates') {
-                const cancer = document.getElementById('param-cancer').value;
-                responseObj = MOCK_DATA.candidates[cancer] || [];
-            } else if (endpoint === '/api/v1/pairs') {
-                const cancer = document.getElementById('param-cancer').value;
-                responseObj = MOCK_DATA.pairs[cancer] || [];
-            } else if (endpoint === '/api/v1/qc/metrics') {
-                responseObj = { mean_z_prime: 0.72, signal_to_background: 14.8, plates_passed: 12 };
-            } else {
-                responseObj = { status: "healthy", database: "connected" };
-            }
-
-            codeEl.textContent = JSON.stringify(responseObj, null, 2);
-            Prism.highlightElement(codeEl);
-        }
-
-        function copyCode() {
-            const code = document.getElementById('fastapi-source-code').textContent;
-            navigator.clipboard.writeText(code);
-            alert("FastAPI backend code copied to clipboard!");
-        }
-    </script>
-</body>
+    <footer class="border-t border-slate-800 bg-slate-950">
+      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+        <div>Cancer Biomarker Platform</div>
+        <div>AI-powered biomedical evidence and decision support</div>
+      </div>
+    </footer>
+  </body>
 </html>

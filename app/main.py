@@ -1,0 +1,48 @@
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
+
+from src.biomarker_engine import list_cancer_types, rank_candidates
+
+app = FastAPI(
+    title="Cancer Biomarker Platform API",
+    description="FastAPI API for biomarker ranking and evidence scoring.",
+    version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/v1/health")
+def health_check() -> dict:
+    return {
+        "status": "healthy",
+        "service": "cancer-biomarker-platform",
+        "version": "0.1.0",
+    }
+
+
+@app.get("/api/v1/cancer-types")
+def cancer_types() -> dict:
+    return {"cancer_types": list_cancer_types()}
+
+
+@app.get("/api/v1/candidates")
+def get_candidates(
+    cancer_type: str = Query(..., description="Cancer type, e.g. PDAC or BRCA"),
+    limit: int = Query(5, ge=1, le=20),
+):
+    results = rank_candidates(cancer_type=cancer_type, limit=limit)
+    return results.to_dict(orient="records")
+
+
+@app.get("/")
+def root() -> dict:
+    return {
+        "message": "Cancer Biomarker Platform API",
+        "docs": "/docs",
+    }
