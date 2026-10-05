@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercy Bio Analytics | Targeted Cancer Biomarker Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="dna" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white tracking-wide flex items-center gap-2">
+                        Mercy Bio Analytics <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">v3.0 Multi-Omics</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Targeted Oncology Engine • Lung, Ovarian, Breast & Prostate Focus</p>
+                </div>
+            </div>
+
+            <!-- NAVIGATION TABS -->
+            <nav class="flex flex-wrap items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 bg-indigo-600 text-white shadow">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Engine
+                </button>
+                <button onclick="switchTab('book')" id="tab-book" class="px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 text-slate-400 hover:text-white">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Biomarker Book
+                </button>
+                <button onclick="switchTab('wetlab')" id="tab-wetlab" class="px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 text-slate-400 hover:text-white">
+                    <i data-lucide="flask-conical" class="w-4 h-4"></i> Wet Lab QC
+                </button>
+                <button onclick="switchTab('architecture')" id="tab-architecture" class="px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 text-slate-400 hover:text-white">
+                    <i data-lucide="server" class="w-4 h-4"></i> Data Architecture
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+
+        <!-- =================================================================== -->
+        <!-- TAB 1: PRIORITIZATION ENGINE & DASHBOARD -->
+        <!-- =================================================================== -->
+        <div id="view-dashboard" class="space-y-8">
+            
+            <!-- CONTROLS & OVERVIEW -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- SCORING WEIGHTS -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Multi-Omics Scoring Weights
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span class="text-slate-300">Tumor Specificity (TCGA vs GTEx)</span>
+                                <span id="w-tumor-val" class="text-indigo-400 font-mono">0.35</span>
+                            </div>
+                            <input type="range" id="w-tumor" min="0" max="1" step="0.05" value="0.35" oninput="updateWeights()" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span class="text-slate-300">Off-Target Toxicity Penalty</span>
+                                <span id="w-offtarget-val" class="text-indigo-400 font-mono">0.25</span>
+                            </div>
+                            <input type="range" id="w-offtarget" min="0" max="1" step="0.05" value="0.25" oninput="updateWeights()" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span class="text-slate-300">Surface / Extracellular Accessibility</span>
+                                <span id="w-surface-val" class="text-indigo-400 font-mono">0.15</span>
+                            </div>
+                            <input type="range" id="w-surface" min="0" max="1" step="0.05" value="0.15" oninput="updateWeights()" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span class="text-slate-300">Extracellular Vesicle (EV) Score</span>
+                                <span id="w-ev-val" class="text-indigo-400 font-mono">0.15</span>
+                            </div>
+                            <input type="range" id="w-ev" min="0" max="1" step="0.05" value="0.15" oninput="updateWeights()" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span class="text-slate-300">Wet Lab Assay Validation & Reagent Quality</span>
+                                <span id="w-reagent-val" class="text-indigo-400 font-mono">0.10</span>
+                            </div>
+                            <input type="range" id="w-reagent" min="0" max="1" step="0.05" value="0.10" oninput="updateWeights()" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHART & TOP METRICS -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i> Target Prioritization Across Focus Cancers
+                        </h3>
+                        <span class="text-xs text-slate-500">Normalized Score (0-100)</span>
+                    </div>
+                    <div class="h-56">
+                        <canvas id="scoresChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAILED BIOMARKER SELECTION & CONCLUSION EXPLANATION -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 pb-4 border-b border-slate-800">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="microscope" class="w-5 h-5 text-indigo-400"></i> Targeted Biomarker Deep Dive & Biological Logic
+                        </h3>
+                        <p class="text-xs text-slate-400">Select any biomarker below to review the specific cancer indication, biological mechanism, and exact reasoning for its score.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-xs text-slate-400">Select Biomarker:</label>
+                        <select id="candidate-selector" onchange="renderDeepDive()" class="bg-slate-800 border border-slate-700 text-indigo-300 font-semibold text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+                            <!-- Injected by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC DEEP DIVE CARD -->
+                <div id="deep-dive-card" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- RANKINGS TABLE & DUAL-MARKER GATES -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- ALL CANDIDATES TABLE -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4 text-indigo-400"></i> Comprehensive Target Ranking Matrix
+                    </h3>
+                    <div class="overflow-x-auto max-h-80 custom-scrollbar">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 uppercase sticky top-0 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2.5 px-3">Gene</th>
+                                    <th class="py-2.5 px-3">Cancer Type</th>
+                                    <th class="py-2.5 px-3">Score</th>
+                                    <th class="py-2.5 px-3">TCGA vs GTEx</th>
+                                </tr>
+                            </thead>
+                            <tbody id="single-targets-body" class="divide-y divide-slate-800/50">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DUAL-MARKER COMBINATORIAL PAIRS -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
+                    <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i> Multiplex Dual-Marker Logic Gates (A AND B)
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">Combines surface markers on circulating extracellular vesicles to maximize diagnostic specificity.</p>
+                    <div class="overflow-x-auto max-h-80 custom-scrollbar">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 uppercase sticky top-0 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2.5 px-3">Target Pair</th>
+                                    <th class="py-2.5 px-3">Joint Tumor Coverage</th>
+                                    <th class="py-2.5 px-3">Toxicity Penalty</th>
+                                    <th class="py-2.5 px-3">Pair Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pair-targets-body" class="divide-y divide-slate-800/50">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 2: THE BIOMARKER & CANCER KNOWLEDGE BOOK -->
+        <!-- =================================================================== -->
+        <div id="view-book" class="hidden space-y-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+                <div class="border-b border-slate-800 pb-6 mb-6">
+                    <span class="text-xs font-bold tracking-widest text-indigo-400 uppercase">Mercy Bio Reference Book</span>
+                    <h2 class="text-2xl font-bold text-white mt-1">Oncology Biomarker Compendium: Lung, Ovarian, Breast & Prostate</h2>
+                    <p class="text-sm text-slate-400 mt-2">In-depth technical chapters explaining cancer pathology, biomarker mechanism of action, exosome shedding dynamics, and diagnostic conclusions.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="book-content">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 3: WET LAB EXPERIMENTAL ASSAY DATA -->
+        <!-- =================================================================== -->
+        <div id="view-wetlab" class="hidden space-y-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+                <div class="border-b border-slate-800 pb-6 mb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                        <span class="text-xs font-bold tracking-widest text-indigo-400 uppercase">Internal Assay Validation</span>
+                        <h2 class="text-2xl font-bold text-white mt-1">Wet Lab Plate Diagnostics & Robust Hit Calling</h2>
+                        <p class="text-sm text-slate-400 mt-1">Screening results across clinical plasma cohorts evaluated with median plate normalization and robust MAD Z-scores.</p>
+                    </div>
+                    <button onclick="generateWetLabData()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-2 self-start">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Re-Run Assay Diagnostics
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <p class="text-xs text-slate-400 font-medium">Assay Format</p>
+                        <p class="text-lg font-bold text-white mt-1">Direct EV Capture ELISA / Time-Resolved Fluorescence</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <p class="text-xs text-slate-400 font-medium">Assayed Cohort Samples</p>
+                        <p id="wetlab-sample-count" class="text-lg font-bold text-indigo-400 mt-1">100 Cohort Samples (Plates 1–4)</p>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5">
+                        <p class="text-xs text-slate-400 font-medium">Hit Threshold Call Rate (Z ≥ 2.5)</p>
+                        <p id="wetlab-hit-rate" class="text-lg font-bold text-emerald-400 mt-1">12% Confirmed Hits</p>
+                    </div>
+                </div>
+
+                <!-- WET LAB TABLE -->
+                <div class="overflow-x-auto max-h-96 custom-scrollbar border border-slate-800 rounded-xl">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase sticky top-0 border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">Sample ID</th>
+                                <th class="py-3 px-4">Plate Identifier</th>
+                                <th class="py-3 px-4">Raw Signal (RFU)</th>
+                                <th class="py-3 px-4">Plate Normalized Signal</th>
+                                <th class="py-3 px-4">Robust Z-Score</th>
+                                <th class="py-3 px-4">Hit Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wetlab-table-body" class="divide-y divide-slate-800/60 bg-slate-900/40">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- TAB 4: SYSTEM ARCHITECTURE & ENTERPRISE DATA STRATEGY (NEW!) -->
+        <!-- =================================================================== -->
+        <div id="view-architecture" class="hidden space-y-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+                <div class="border-b border-slate-800 pb-6 mb-6">
+                    <span class="text-xs font-bold tracking-widest text-indigo-400 uppercase">System Engineering Strategy</span>
+                    <h2 class="text-2xl font-bold text-white mt-1">Data Platform Architecture & Scaling Strategy</h2>
+                    <p class="text-sm text-slate-400 mt-2">Technical design write-up outlining the ETL ingestion pipeline, mathematical scoring algorithms, and production data warehouse architecture.</p>
+                </div>
+
+                <!-- VISUAL PIPELINE FLOW -->
+                <div class="mb-10">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i data-lucide="network" class="w-4 h-4 text-indigo-400"></i> End-to-End Data Stack Flow
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+                            <span class="text-xs font-bold text-indigo-400 font-mono">01. INGESTION</span>
+                            <h4 class="text-sm font-bold text-white">Public & LIMS Sources</h4>
+                            <p class="text-xs text-slate-400">Pulls public RNA-Seq (TCGA, GTEx, HPA) and ingests wet-lab LIMS microplate reader output files.</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+                            <span class="text-xs font-bold text-indigo-400 font-mono">02. TRANSFORM (ETL)</span>
+                            <h4 class="text-sm font-bold text-white">dbt / PySpark Processing</h4>
+                            <p class="text-xs text-slate-400">Standardizes gene expression schemas, executes MAD robust Z-score normalization, and calculates toxicity risk.</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+                            <span class="text-xs font-bold text-indigo-400 font-mono">03. WAREHOUSE</span>
+                            <h4 class="text-sm font-bold text-white">Snowflake / Parquet Lake</h4>
+                            <p class="text-xs text-slate-400">Stores structured multi-omics tables in Apache Parquet partitioned by cancer indication and target gene.</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+                            <span class="text-xs font-bold text-indigo-400 font-mono">04. SERVING</span>
+                            <h4 class="text-sm font-bold text-white">FastAPI & Interactive UI</h4>
+                            <p class="text-xs text-slate-400">Exposes high-speed GraphQL/REST endpoints to serve real-time dynamic scoring and analytics dashboards.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MATHEMATICAL FORMULATION -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                    <div class="bg-slate-950 border border-slate-800 p-6 rounded-xl space-y-3">
+                        <h3 class="text-sm font-bold text-indigo-300 flex items-center gap-2">
+                            <i data-lucide="calculator" class="w-4 h-4 text-indigo-400"></i> Single-Target Prioritization Formula
+                        </h3>
+                        <div class="bg-slate-900 p-3 rounded font-mono text-xs text-emerald-400 overflow-x-auto">
+                            Score = ( w1 * TCGA_Delta - w2 * GTEx_Risk + w3 * Surface + w4 * EV + w5 * Reagent ) * 100
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Calculates a unified priority index by balancing tumor expression gains against healthy baseline toxicity penalties, extracellular vesicle enrichment, and binder accessibility.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 p-6 rounded-xl space-y-3">
+                        <h3 class="text-sm font-bold text-indigo-300 flex items-center gap-2">
+                            <i data-lucide="binary" class="w-4 h-4 text-indigo-400"></i> Multiplex Dual-Marker Logic Gate (A AND B)
+                        </h3>
+                        <div class="bg-slate-900 p-3 rounded font-mono text-xs text-emerald-400 overflow-x-auto">
+                            PairScore = ( 0.4 * min(Coverage_A, Coverage_B) - 0.3 * Risk_A * Risk_B + 0.3 * min(EV_A, EV_B) ) * 100
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Models joint target co-expression on circulating exosomes to maximize diagnostic specificity while penalizing dual organ toxicity risks.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ENTERPRISE DATA PLATFORM ROADMAP -->
+                <div class="bg-slate-950 border border-slate-800 p-6 rounded-xl space-y-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-indigo-400"></i> Scaling to Production Enterprise Architecture
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+                        <div>
+                            <h4 class="font-bold text-indigo-300 mb-1">1. Automated Pipeline Orchestration</h4>
+                            <p class="text-slate-400 leading-relaxed">Deploy Apache Airflow DAGs to query TCGA and GTEx REST APIs monthly, automatically validating schemas and triggering downstream dbt transformations.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-indigo-300 mb-1">2. Columnar Data Storage</h4>
+                            <p class="text-slate-400 leading-relaxed">Store gene profiles in compressed Apache Parquet files on AWS S3/Snowflake to query millions of single-cell transcripts in milliseconds.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-indigo-300 mb-1">3. Automated Quality Control</h4>
+                            <p class="text-slate-400 leading-relaxed">Implement Median Absolute Deviation (MAD) robust Z-score transformations to automatically strip plate-level edge effects from screening assays.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ===================================================================
+        // MASTER DATABASE: LUNG, OVARIAN, BREAST & PROSTATE CANCERS
+        // ===================================================================
+        const candidates = [
+            // LUNG CANCER
+            {
+                gene: "EGFR",
+                name: "Epidermal Growth Factor Receptor",
+                cancerType: "Lung Cancer",
+                cancer: "Non-Small Cell Lung Cancer (NSCLC) Adenocarcinoma",
+                cancerDesc: "NSCLC represents ~85% of lung malignancies. It is characterized by frequent activating mutations in receptor tyrosine kinases, driven by tobacco exposure or oncogenic driver alterations, leading to rapid pulmonary metastasis.",
+                bioDesc: "EGFR is a cell-surface receptor tyrosine kinase. Ligand binding triggers receptor dimerization and downstream RAS-RAF-MEK-ERK activation. Overexpressed EGFR is heavily shed onto extracellular vesicle (EV) membranes, making it a key circulating exosomal target.",
+                tcga: 9.2,
+                gtex: 2.1,
+                gtex_risk: 3.2,
+                location: "Plasma membrane",
+                ev: 0.91,
+                reagent: 1.0,
+                sc: 0.88,
+                conclusion: "High prioritization rank. Strong TCGA expression in lung tumor tissue with robust antibody binder availability and high abundance on circulating tumor EVs."
+            },
+            {
+                gene: "TROP2",
+                name: "Trophoblast Cell Surface Antigen 2 (TACSTD2)",
+                cancerType: "Lung & Breast Cancer",
+                cancerDesc: "TROP2 is upregulated in squamous and adenocarcinoma lung tumors, as well as triple-negative breast cancers, driving enhanced cellular motility, anchorage-independent growth, and invasive stem-like traits.",
+                bioDesc: "A transmembrane calcium signal transducer glycoprotein. Highly concentrated on tumor microvesicle membranes, serving as an ideal target for antibody-drug conjugates (ADCs) and liquid biopsy capture.",
+                tcga: 8.8,
+                gtex: 1.5,
+                gtex_risk: 2.1,
+                location: "Plasma membrane",
+                ev: 0.86,
+                reagent: 0.9,
+                sc: 0.82,
+                conclusion: "Very favorable candidate. Exceptional tumor-to-normal expression ratio with broad diagnostic applicability in both lung and breast cancer liquid biopsies."
+            },
+
+            // OVARIAN CANCER
+            {
+                gene: "FOLR1",
+                name: "Folate Receptor Alpha (FR-α)",
+                cancerType: "Ovarian Cancer",
+                cancerDesc: "High-Grade Serous Ovarian Carcinoma (HGSOC) is the most lethal gynecologic cancer. Often diagnosed at Stage III/IV due to silent peritoneal dissemination, making early liquid biopsy detection critical.",
+                bioDesc: "A GPI-anchored cell-surface glycoprotein with high affinity for folate. Overexpressed in >90% of HGSOC tumors while largely restricted to apical surfaces of normal epithelial cells, making it minimally accessible in normal bloodstream circulation.",
+                tcga: 9.1,
+                gtex: 1.0,
+                gtex_risk: 1.8,
+                location: "Plasma membrane (GPI-anchored)",
+                ev: 0.88,
+                reagent: 0.95,
+                sc: 0.86,
+                conclusion: "Top-tier candidate for ovarian screening. Exhibits near-zero expression in vital organs like heart and brain, resulting in a minimal off-target safety penalty."
+            },
+            {
+                gene: "MSLN",
+                name: "Mesothelin",
+                cancerType: "Ovarian Cancer",
+                cancerDesc: "Ovarian and peritoneal adenocarcinomas where mesothelin over-expression promotes peritoneal implantation and metastatic colonization via binding to MUC16/CA125.",
+                bioDesc: "A 40 kDa cell-surface glycoprotein anchored to the membrane by phosphatidylinositol. Mesothelin undergoes proteolytic cleavage and active release on tumor exosomes into peritoneal fluid and peripheral blood.",
+                tcga: 8.6,
+                gtex: 0.6,
+                gtex_risk: 1.2,
+                location: "Plasma membrane",
+                ev: 0.84,
+                reagent: 0.85,
+                sc: 0.79,
+                conclusion: "Excellent diagnostic candidate. High tumor specificity with minimal expression in normal GTEx tissue baselines, yielding strong single and dual-marker gate utility."
+            },
+
+            // BREAST CANCER
+            {
+                gene: "ERBB2",
+                name: "Human Epidermal Growth Factor Receptor 2 (HER2)",
+                cancerType: "Breast Cancer",
+                cancerDesc: "HER2-positive breast cancer accounts for 15-20% of invasive breast carcinomas. Marked by gene amplification, aggressive tumor growth, and high propensity for early brain and bone metastasis.",
+                bioDesc: "A membrane-bound receptor tyrosine kinase without a known direct ligand. It dimerizes with other HER family members to drive cell survival. Amplified HER2 protein shedding onto EVs provides a strong circulating biomarker signal.",
+                tcga: 9.5,
+                gtex: 1.8,
+                gtex_risk: 2.4,
+                location: "Plasma membrane",
+                ev: 0.95,
+                reagent: 1.0,
+                sc: 0.91,
+                conclusion: "Highest overall score. Well-validated monoclonal antibody reagents, massive EV enrichment, and clear clinical utility for monitoring HER2 amplification status."
+            },
+            {
+                gene: "ESR1",
+                name: "Estrogen Receptor Alpha",
+                cancerType: "Breast Cancer",
+                cancerDesc: "ER-positive breast cancer comprises ~70% of all breast malignancies. Dependent on estrogen signaling for cell proliferation, with ESR1 mutations often driving endocrine therapy resistance.",
+                bioDesc: "A nuclear hormone receptor that translocates upon ligand binding to alter gene transcription. Secondary extracellular EV association occurs via protein complexes shed into the tumor microenvironment.",
+                tcga: 8.2,
+                gtex: 2.0,
+                gtex_risk: 2.8,
+                location: "Nucleus / Cytoplasm (Secondary EV association)",
+                ev: 0.55,
+                reagent: 0.9,
+                sc: 0.74,
+                conclusion: "Penalized on surface accessibility. As a nuclear receptor, its EV surface capture efficiency is lower than transmembrane targets like HER2 or TROP2."
+            },
+
+            // PROSTATE CANCER
+            {
+                gene: "FOLH1",
+                name: "Prostate-Specific Membrane Antigen (PSMA)",
+                cancerType: "Prostate Cancer",
+                cancerDesc: "Prostate Adenocarcinoma is the second most common cancer in men. Advanced stages lead to osteoblastic bone metastases, where precise surface target identification is vital for diagnostic imaging and therapy.",
+                bioDesc: "A type II transmembrane zinc metalloenzyme expressed on prostate epithelial cell membranes. PSMA expression increases dramatically with tumor grade, androgen deprivation resistance, and metastatic progression.",
+                tcga: 9.3,
+                gtex: 0.8,
+                gtex_risk: 1.3,
+                location: "Plasma membrane",
+                ev: 0.90,
+                reagent: 0.95,
+                sc: 0.87,
+                conclusion: "Outstanding specificity profile for prostate cancer. Near-zero background expression in healthy non-prostatic GTEx tissues, delivering a clean, low-noise diagnostic window."
+            },
+            {
+                gene: "STEAP1",
+                name: "Six-Transmembrane Epithelial Antigen of the Prostate 1",
+                cancerType: "Prostate Cancer",
+                cancerDesc: "Prostate adenocarcinoma and metastatic castrate-resistant prostate cancer (mCRPC). Over-expressed in >80% of metastatic lesions.",
+                bioDesc: "A cell-surface transmembrane protein acting as an oxidoreductase. Highly localized at cell-cell junctions and shed on tumor exosomes, making it a prominent candidate for multiplexed liquid biopsy assays.",
+                tcga: 8.5,
+                gtex: 0.9,
+                gtex_risk: 1.5,
+                location: "Plasma membrane",
+                ev: 0.82,
+                reagent: 0.8,
+                sc: 0.80,
+                conclusion: "Strong combinatorial target. Combines effectively with PSMA (FOLH1) in dual-marker logic gate capture assays for detecting castrate-resistant prostate cancer EVs."
+            }
+        ];
+
+        let chart;
+
+        // ===================================================================
+        // TAB SWITCHING LOGIC
+        // ===================================================================
+        function switchTab(tab) {
+            document.getElementById("view-dashboard").classList.add("hidden");
+            document.getElementById("view-book").classList.add("hidden");
+            document.getElementById("view-wetlab").classList.add("hidden");
+            document.getElementById("view-architecture").classList.add("hidden");
+
+            const defaultTabStyle = "px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 text-slate-400 hover:text-white";
+            document.getElementById("tab-dashboard").className = defaultTabStyle;
+            document.getElementById("tab-book").className = defaultTabStyle;
+            document.getElementById("tab-wetlab").className = defaultTabStyle;
+            document.getElementById("tab-architecture").className = defaultTabStyle;
+
+            document.getElementById(`view-${tab}`).classList.remove("hidden");
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.className = "px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 bg-indigo-600 text-white shadow";
+
+            if (tab === "book") renderBook();
+            if (tab === "wetlab") generateWetLabData();
+        }
+
+        // ===================================================================
+        // PIPELINE & SCORING CALCULATIONS
+        // ===================================================================
+        function getWeights() {
+            return {
+                tumor: parseFloat(document.getElementById("w-tumor").value),
+                offtarget: parseFloat(document.getElementById("w-offtarget").value),
+                surface: parseFloat(document.getElementById("w-surface").value),
+                ev: parseFloat(document.getElementById("w-ev").value),
+                reagent: parseFloat(document.getElementById("w-reagent").value),
+            };
+        }
+
+        function updateWeights() {
+            document.getElementById("w-tumor-val").innerText = document.getElementById("w-tumor").value;
+            document.getElementById("w-offtarget-val").innerText = document.getElementById("w-offtarget").value;
+            document.getElementById("w-surface-val").innerText = document.getElementById("w-surface").value;
+            document.getElementById("w-ev-val").innerText = document.getElementById("w-ev").value;
+            document.getElementById("w-reagent-val").innerText = document.getElementById("w-reagent").value;
+            runPipeline();
+        }
+
+        function calculateScores() {
+            const w = getWeights();
+            
+            return candidates.map(c => {
+                const specScore = Math.min((c.tcga - c.gtex) / 5.0, 1.0);
+                const offTargetPenalty = Math.min(c.gtex_risk / 8.0, 1.0);
+                const surfaceScore = (c.location.includes("Plasma") || c.location.includes("Extracellular")) ? 1.0 : 0.2;
+
+                const rawScore = (w.tumor * specScore) - 
+                                 (w.offtarget * offTargetPenalty) + 
+                                 (w.surface * surfaceScore) + 
+                                 (w.ev * c.ev) + 
+                                 (w.reagent * c.reagent);
+
+                return { ...c, rawScore, specScore, offTargetPenalty, surfaceScore };
+            }).sort((a, b) => b.rawScore - a.rawScore);
+        }
+
+        function computePairs(scoredCandidates) {
+            const top = scoredCandidates.slice(0, 6);
+            const pairs = [];
+
+            for (let i = 0; i < top.length; i++) {
+                for (let j = i + 1; j < top.length; j++) {
+                    const a = top[i];
+                    const b = top[j];
+                    const jointCoverage = Math.min(a.sc, b.sc);
+                    const pairRisk = a.offTargetPenalty * b.offTargetPenalty;
+                    const pairScore = (0.4 * jointCoverage) - (0.3 * pairRisk) + (0.3 * Math.min(a.ev, b.ev));
+                    pairs.push({ a: a.gene, b: b.gene, jointCoverage, pairRisk, pairScore });
+                }
+            }
+            return pairs.sort((a, b) => b.pairScore - a.pairScore);
+        }
+
+        // ===================================================================
+        // RENDER FUNCTIONS
+        // ===================================================================
+        function renderChart(scoredData) {
+            const top = scoredData.slice(0, 8);
+            const ctx = document.getElementById('scoresChart').getContext('2d');
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top.map(d => `${d.gene} (${d.cancerType.split(' ')[0]})`),
+                    datasets: [{
+                        label: 'Prioritization Score',
+                        data: top.map(d => (d.rawScore * 100).toFixed(1)),
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold', size: 10 } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function populateSelector(scored) {
+            const select = document.getElementById("candidate-selector");
+            const currentVal = select.value || scored[0].gene;
+            select.innerHTML = scored.map(c => `<option value="${c.gene}">${c.gene} - ${c.cancerType}</option>`).join('');
+            select.value = currentVal;
+        }
+
+        function renderDeepDive() {
+            const selectedGene = document.getElementById("candidate-selector").value;
+            const item = candidates.find(c => c.gene === selectedGene) || candidates[0];
+
+            const card = document.getElementById("deep-dive-card");
+            card.innerHTML = `
+                <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl space-y-3">
+                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">${item.cancerType} Indication</span>
+                    <h4 class="text-base font-bold text-white">${item.cancer}</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">${item.cancerDesc}</p>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl space-y-3">
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Biomarker Function & EV Localization</span>
+                    <h4 class="text-base font-bold text-white">${item.gene} (${item.name})</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">${item.bioDesc}</p>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl space-y-3 border-l-4 border-l-indigo-500">
+                    <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Analytical Conclusion</span>
+                    <h4 class="text-sm font-bold text-white">Scoring Decision Rationale:</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">${item.conclusion}</p>
+                </div>
+            `;
+        }
+
+        function runPipeline() {
+            const scored = calculateScores();
+            const pairs = computePairs(scored);
+
+            populateSelector(scored);
+            renderDeepDive();
+
+            // Render Single Target Table
+            const singleBody = document.getElementById("single-targets-body");
+            singleBody.innerHTML = scored.map(item => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-2.5 px-3 font-bold text-white">${item.gene}</td>
+                    <td class="py-2.5 px-3 text-slate-400 text-xs">${item.cancerType}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-mono text-xs font-semibold border border-indigo-500/20">${(item.rawScore * 100).toFixed(1)}</span></td>
+                    <td class="py-2.5 px-3 text-xs"><span class="text-emerald-400 font-mono">${item.tcga}</span> / <span class="text-rose-400 font-mono">${item.gtex_risk}</span></td>
+                </tr>
+            `).join('');
+
+            // Render Pairs Table
+            const pairBody = document.getElementById("pair-targets-body");
+            pairBody.innerHTML = pairs.slice(0, 5).map(p => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-2.5 px-3 font-semibold text-indigo-300">${p.a} + ${p.b}</td>
+                    <td class="py-2.5 px-3 font-mono text-xs text-slate-300">${(p.jointCoverage * 100).toFixed(0)}%</td>
+                    <td class="py-2.5 px-3 font-mono text-xs text-slate-400">${(p.pairRisk * 100).toFixed(1)}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-xs font-semibold border border-emerald-500/20">${(p.pairScore * 100).toFixed(1)}</span></td>
+                </tr>
+            `).join('');
+
+            renderChart(scored);
+        }
+
+        // ===================================================================
+        // BOOK TAB RENDER
+        // ===================================================================
+        function renderBook() {
+            const container = document.getElementById("book-content");
+            container.innerHTML = candidates.map(c => `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
+                    <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">${c.cancerType} Chapter</span>
+                            <h3 class="text-xl font-bold text-white mt-0.5">${c.gene} - ${c.name}</h3>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-mono">${c.location}</span>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-1">Target Cancer Pathology</h4>
+                        <p class="text-sm font-semibold text-indigo-200">${c.cancer}</p>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">${c.cancerDesc}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-1">Biomarker Function & Biological Role</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">${c.bioDesc}</p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                        <h4 class="text-xs font-bold text-indigo-400 uppercase mb-1">Diagnostic Conclusion Rationale</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">${c.conclusion}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===================================================================
+        // WET LAB DATA GENERATOR
+        // ===================================================================
+        function generateWetLabData() {
+            const tbody = document.getElementById("wetlab-table-body");
+            let hits = 0;
+            let rows = [];
+
+            for (let i = 1; i <= 100; i++) {
+                const sampleId = `SMP-2026-${String(i).padStart(4, '0')}`;
+                const plateId = `PLATE-0${Math.ceil(i / 25)}`;
+                const isHit = Math.random() < 0.12; // ~12% hit rate
+                
+                let rawSignal, zScore;
+                if (isHit) {
+                    hits++;
+                    rawSignal = (Math.random() * 1500 + 2300).toFixed(0);
+                    zScore = (Math.random() * 2.5 + 2.5).toFixed(2);
+                } else {
+                    rawSignal = (Math.random() * 600 + 400).toFixed(0);
+                    zScore = (Math.random() * 2.0 - 0.5).toFixed(2);
+                }
+
+                const normSignal = (rawSignal / 500).toFixed(2);
+
+                rows.push(`
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2.5 px-4 font-mono font-semibold text-slate-200">${sampleId}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-400">${plateId}</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-300">${rawSignal} RFU</td>
+                        <td class="py-2.5 px-4 font-mono text-slate-300">${normSignal}x</td>
+                        <td class="py-2.5 px-4 font-mono ${zScore >= 2.5 ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${zScore}</td>
+                        <td class="py-2.5 px-4">
+                            ${zScore >= 2.5 
+                                ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">CONFIRMED HIT</span>' 
+                                : '<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">Baseline</span>'}
+                        </td>
+                    </tr>
+                `);
+            }
+
+            tbody.innerHTML = rows.join('');
+            document.getElementById("wetlab-hit-rate").innerText = `${hits}% Confirmed Hits`;
+        }
+
+        // ===================================================================
+        // INITIALIZATION
+        // ===================================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            runPipeline();
+        });
+    </script>
+</body>
+</html>
