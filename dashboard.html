@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cancer Biomarker Platform - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        .loading { 
+            display: inline-block; 
+            width: 20px; 
+            height: 20px; 
+            border: 3px solid rgba(255, 255, 255, 0.3); 
+            border-radius: 50%; 
+            border-top-color: white; 
+            animation: spin 0.8s ease-in-out infinite; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .metric-card {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .score-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #ef4444, #eab308, #22c55e);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased">
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm sticky top-0 z-50">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 font-bold text-white">
+                    CB
+                </div>
+                <div>
+                    <div class="text-lg font-semibold tracking-tight">Cancer Biomarker Platform</div>
+                    <div class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Interactive Dashboard</div>
+                </div>
+            </div>
+            <div id="api-status" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-xs">
+                <div class="w-2 h-2 rounded-full bg-red-500" id="status-dot"></div>
+                <span id="status-text">Checking connection...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-6 py-8">
+        <!-- Tabs -->
+        <div class="flex gap-4 mb-8 border-b border-slate-800">
+            <button class="tab-btn active px-4 py-3 text-sm font-medium text-cyan-400 border-b-2 border-cyan-500 hover:text-white" data-tab="upload">
+                📤 Upload Data
+            </button>
+            <button class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 border-b-2 border-transparent hover:text-white" data-tab="candidates">
+                🎯 Biomarker Candidates
+            </button>
+            <button class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 border-b-2 border-transparent hover:text-white" data-tab="analytics">
+                📊 Analytics
+            </button>
+        </div>
+
+        <!-- TAB: Upload Data -->
+        <div class="tab-content" id="tab-upload">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Upload Card -->
+                <div class="rounded-2xl border border-slate-800 bg-slate-900 p-8">
+                    <h2 class="text-2xl font-bold mb-6">Upload Biomarker Data</h2>
+                    
+                    <div id="drop-zone" class="border-2 border-dashed border-cyan-500/50 rounded-xl p-8 text-center mb-6 cursor-pointer hover:border-cyan-400 hover:bg-cyan-500/5 transition">
+                        <div class="text-4xl mb-3">📁</div>
+                        <p class="text-slate-300 font-medium mb-2">Drag & drop your CSV/Excel file here</p>
+                        <p class="text-slate-400 text-sm mb-4">or click to select</p>
+                        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display: none;" />
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Select Cancer Type</label>
+                        <select id="cancer-type-select" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white">
+                            <option value="">Loading cancer types...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Use Case</label>
+                        <select id="use-case-select" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white">
+                            <option value="diagnostic">Diagnostic</option>
+                            <option value="prognostic">Prognostic</option>
+                            <option value="drug_response">Drug Response</option>
+                            <option value="treatment_monitoring">Treatment Monitoring</option>
+                        </select>
+                    </div>
+
+                    <button id="upload-btn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Upload & Analyze
+                    </button>
+
+                    <div id="upload-status" class="mt-4 text-sm"></div>
+                </div>
+
+                <!-- Instructions Card -->
+                <div class="rounded-2xl border border-slate-800 bg-slate-900 p-8">
+                    <h3 class="text-lg font-bold mb-4">📋 CSV Format Requirements</h3>
+                    <div class="space-y-3 text-sm text-slate-300">
+                        <p><span class="text-cyan-400 font-mono">gene_symbol</span> - HGNC gene symbol (e.g., "BRCA1")</p>
+                        <p><span class="text-cyan-400 font-mono">expression_level</span> - Expression in target (0-1)</p>
+                        <p><span class="text-cyan-400 font-mono">specificity</span> - Tumor-specific (0-1)</p>
+                        <p><span class="text-cyan-400 font-mono">off_target_risk</span> - Risk of expression in normal tissue (0-1)</p>
+                        <p><span class="text-cyan-400 font-mono">accessibility</span> - Surface accessibility if relevant (0-1)</p>
+                        <p><span class="text-cyan-400 font-mono">evidence_strength</span> - Supporting evidence confidence (0-1)</p>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-slate-800 rounded-lg">
+                        <p class="text-xs font-mono text-slate-400 mb-2">Example row:</p>
+                        <code class="text-xs text-cyan-300 block break-words">
+                            BRCA1,0.85,0.92,0.08,0.95,0.89
+                        </code>
+                    </div>
+
+                    <button id="demo-data-btn" class="w-full mt-6 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition">
+                        Load Demo Data Instead
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Biomarker Candidates -->
+        <div class="tab-content hidden" id="tab-candidates">
+            <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 mb-6">
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Cancer Type</label>
+                        <select id="filter-cancer-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Use Case</label>
+                        <select id="filter-use-case" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white">
+                            <option value="diagnostic">Diagnostic</option>
+                            <option value="prognostic">Prognostic</option>
+                            <option value="drug_response">Drug Response</option>
+                            <option value="treatment_monitoring">Treatment Monitoring</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Number of Results</label>
+                        <select id="filter-limit" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white">
+                            <option value="5">Top 5</option>
+                            <option value="10">Top 10</option>
+                            <option value="20">Top 20</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="filter-btn" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6 py-2 rounded-lg transition">
+                    Apply Filters
+                </button>
+            </div>
+
+            <div id="candidates-list" class="space-y-4">
+                <div class="text-center text-slate-400 py-12">
+                    <div class="text-4xl mb-2">🔍</div>
+                    <p>Select filters and click "Apply Filters" to load biomarker candidates</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Analytics -->
+        <div class="tab-content hidden" id="tab-analytics">
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="metric-card rounded-2xl border border-slate-800 p-6">
+                    <p class="text-slate-400 text-sm mb-2">TOTAL CANDIDATES</p>
+                    <p class="text-4xl font-bold text-cyan-400" id="metric-total">0</p>
+                </div>
+                <div class="metric-card rounded-2xl border border-slate-800 p-6">
+                    <p class="text-slate-400 text-sm mb-2">AVG CONFIDENCE SCORE</p>
+                    <p class="text-4xl font-bold text-emerald-400" id="metric-avg-score">0.00</p>
+                </div>
+                <div class="metric-card rounded-2xl border border-slate-800 p-6">
+                    <p class="text-slate-400 text-sm mb-2">CANCER TYPES ANALYZED</p>
+                    <p class="text-4xl font-bold text-violet-400" id="metric-cancer-types">0</p>
+                </div>
+                <div class="metric-card rounded-2xl border border-slate-800 p-6">
+                    <p class="text-slate-400 text-sm mb-2">HIGH CONFIDENCE (>0.85)</p>
+                    <p class="text-4xl font-bold text-amber-400" id="metric-high-conf">0</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                    <h3 class="text-lg font-bold mb-4">Score Distribution</h3>
+                    <canvas id="score-chart" height="200"></canvas>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                    <h3 class="text-lg font-bold mb-4">Top Candidates by Cancer Type</h3>
+                    <canvas id="cancer-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000/api/v1";
+        let currentCandidates = [];
+        let allCancerTypes = [];
+
+        // Check API connection
+        async function checkAPIConnection() {
+            try {
+                const res = await fetch(`${API_BASE}/health`, { mode: 'cors' });
+                if (res.ok) {
+                    document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+                    document.getElementById('status-text').textContent = '✓ API Connected';
+                    return true;
+                }
+            } catch (e) {
+                document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-red-500';
+                document.getElementById('status-text').textContent = '✗ API Not Reachable';
+            }
+            return false;
+        }
+
+        // Load cancer types
+        async function loadCancerTypes() {
+            try {
+                const res = await fetch(`${API_BASE}/cancer-types`, { mode: 'cors' });
+                const data = await res.json();
+                allCancerTypes = data.cancer_types;
+                const select = document.getElementById('cancer-type-select');
+                const filterSelect = document.getElementById('filter-cancer-type');
+                select.innerHTML = allCancerTypes.map(ct => `<option value="${ct}">${ct}</option>`).join('');
+                filterSelect.innerHTML = '<option value="">All Types</option>' + allCancerTypes.map(ct => `<option value="${ct}">${ct}</option>`).join('');
+            } catch (e) {
+                console.error('Failed to load cancer types:', e);
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active', 'text-cyan-400', 'border-cyan-500');
+                    b.classList.add('text-slate-400', 'border-transparent');
+                });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                btn.classList.add('active', 'text-cyan-400', 'border-cyan-500');
+                btn.classList.remove('text-slate-400', 'border-transparent');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+            });
+        });
+
+        // File upload
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#06b6d4';
+            dropZone.style.backgroundColor = 'rgba(6, 182, 212, 0.1)';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+            dropZone.style.backgroundColor = 'transparent';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) fileInput.files = files;
+            dropZone.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+        });
+
+        // Load demo data
+        document.getElementById('demo-data-btn').addEventListener('click', async () => {
+            const cancerType = document.getElementById('cancer-type-select').value || 'PDAC';
+            const useCase = document.getElementById('use-case-select').value;
+            try {
+                const res = await fetch(`${API_BASE}/candidates?cancer_type=${cancerType}&use_case=${useCase}&limit=10`, { mode: 'cors' });
+                const data = await res.json();
+                currentCandidates = data.candidates;
+                showNotification('✓ Demo data loaded successfully', 'success');
+                document.querySelector('[data-tab="candidates"]').click();
+            } catch (e) {
+                showNotification('✗ Failed to load demo data', 'error');
+            }
+        });
+
+        // Upload file
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            if (!fileInput.files.length) {
+                showNotification('Please select a file', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('cancer_type', document.getElementById('cancer-type-select').value);
+            formData.append('use_case', document.getElementById('use-case-select').value);
+
+            const btn = document.getElementById('upload-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading mx-auto"></div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/ingest/upload`, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors'
+                });
+                const data = await res.json();
+                currentCandidates = data.top_candidates;
+                showNotification(`✓ Uploaded ${data.genes_processed} genes`, 'success');
+                document.querySelector('[data-tab="candidates"]').click();
+            } catch (e) {
+                showNotification('✗ Upload failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Upload & Analyze';
+            }
+        });
+
+        // Apply filters
+        document.getElementById('filter-btn').addEventListener('click', async () => {
+            const cancerType = document.getElementById('filter-cancer-type').value || 'PDAC';
+            const useCase = document.getElementById('filter-use-case').value;
+            const limit = document.getElementById('filter-limit').value;
+
+            const btn = document.getElementById('filter-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Loading...';
+
+            try {
+                const res = await fetch(`${API_BASE}/candidates?cancer_type=${cancerType}&use_case=${useCase}&limit=${limit}`, { mode: 'cors' });
+                const data = await res.json();
+                currentCandidates = data.candidates;
+                renderCandidates();
+                updateAnalytics();
+            } catch (e) {
+                showNotification('✗ Failed to load candidates', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Apply Filters';
+            }
+        });
+
+        // Render candidates
+        function renderCandidates() {
+            const list = document.getElementById('candidates-list');
+            if (!currentCandidates.length) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-12"><div class="text-4xl mb-2">📊</div><p>No candidates to display</p></div>';
+                return;
+            }
+
+            list.innerHTML = currentCandidates.map((c, i) => `
+                <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-cyan-500/50 transition cursor-pointer" onclick="showCandidateDetail('${c.gene}')">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="text-2xl font-bold text-cyan-400">${c.gene}</div>
+                            <div class="text-sm text-slate-400">${c.gene_name || c.gene} • ${c.cancer_type}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-emerald-400">${(c.composite_score || c.score || 0).toFixed(3)}</div>
+                            <div class="text-xs text-slate-400">Rank #${i + 1}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div class="bg-slate-800 rounded-lg p-3">
+                            <div class="text-xs text-slate-400 mb-1">Specificity</div>
+                            <div class="text-lg font-bold text-white">${(c.specificity || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="bg-slate-800 rounded-lg p-3">
+                            <div class="text-xs text-slate-400 mb-1">Off-target Risk</div>
+                            <div class="text-lg font-bold text-white">${(c.off_target_risk || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="bg-slate-800 rounded-lg p-3">
+                            <div class="text-xs text-slate-400 mb-1">Accessibility</div>
+                            <div class="text-lg font-bold text-white">${(c.accessibility || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="bg-slate-800 rounded-lg p-3">
+                            <div class="text-xs text-slate-400 mb-1">Evidence Strength</div>
+                            <div class="text-lg font-bold text-white">${(c.evidence_strength || 0).toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-400 mb-2">Composite Score</div>
+                    <div class="score-bar"></div>
+                </div>
+            `).join('');
+        }
+
+        // Update analytics
+        function updateAnalytics() {
+            if (!currentCandidates.length) return;
+
+            const total = currentCandidates.length;
+            const avgScore = (currentCandidates.reduce((sum, c) => sum + (c.composite_score || c.score || 0), 0) / total).toFixed(2);
+            const cancerTypes = new Set(currentCandidates.map(c => c.cancer_type)).size;
+            const highConf = currentCandidates.filter(c => (c.composite_score || c.score || 0) > 0.85).length;
+
+            document.getElementById('metric-total').textContent = total;
+            document.getElementById('metric-avg-score').textContent = avgScore;
+            document.getElementById('metric-cancer-types').textContent = cancerTypes;
+            document.getElementById('metric-high-conf').textContent = highConf;
+
+            // Score histogram
+            const scores = currentCandidates.map(c => c.composite_score || c.score || 0);
+            const bins = [0, 0, 0, 0, 0];
+            scores.forEach(s => {
+                if (s < 0.2) bins[0]++;
+                else if (s < 0.4) bins[1]++;
+                else if (s < 0.6) bins[2]++;
+                else if (s < 0.8) bins[3]++;
+                else bins[4]++;
+            });
+
+            const scoreCtx = document.getElementById('score-chart').getContext('2d');
+            new Chart(scoreCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-0.2', '0.2-0.4', '0.4-0.6', '0.6-0.8', '0.8-1.0'],
+                    datasets: [{
+                        label: 'Candidates',
+                        data: bins,
+                        backgroundColor: 'rgba(6, 182, 212, 0.6)',
+                        borderColor: '#06b6d4',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false }, filler: { propagate: true } },
+                    scales: { x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } }, y: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function showNotification(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg text-white text-sm ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
+            div.textContent = msg;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        function showCandidateDetail(gene) {
+            const c = currentCandidates.find(x => x.gene === gene);
+            if (c) {
+                alert(`${gene}\n\nSpecificity: ${c.specificity}\nOff-target Risk: ${c.off_target_risk}\nAccessibility: ${c.accessibility}\nEvidence Strength: ${c.evidence_strength}\n\nComposite Score: ${c.composite_score || c.score}`);
+            }
+        }
+
+        // Initialize
+        checkAPIConnection();
+        loadCancerTypes();
+    </script>
+</body>
+</html>
